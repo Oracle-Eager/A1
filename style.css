@@ -1,15 +1,15 @@
 :root {
-    --bg-color: #f0f8f0; /* Light Pista */
-    --surface-color: #ffffff; /* White */
-    --header-bg-glass: rgba(255, 255, 255, 0.7);
-    --border-color: #dcdcdc; /* Light Gray */
-    --text-color: #333333; /* Dark Gray */
-    --text-secondary-color: #7f8c8d; /* Grayish Pista */
-    --accent-color: #8db600; /* Pista Green */
-    --accent-hover-color: #7ca500; /* Darker Pista Green */
+    --bg-color: #ffffff; /* White */
+    --surface-color: #f8f9fa; /* Light Gray */
+    --header-bg-glass: rgba(248, 249, 250, 0.7);
+    --border-color: #e9ecef; /* Lighter Gray */
+    --text-color: #212529; /* Darker Gray */
+    --text-secondary-color: #6c757d; /* Gray */
+    --accent-color: #007bff; /* Blue */
+    --accent-hover-color: #0056b3; /* Darker Blue */
     --error-color: #e74c3c; /* Red */
-    --shadow-color-dark: rgba(0, 0, 0, 0.1);
-    --glow-shadow: 0 0 25px rgba(141, 182, 0, 0.25), 0 0 40px rgba(141, 182, 0, 0.15);
+    --shadow-color-dark: rgba(0, 0, 0, 0.05);
+    --glow-shadow: 0 0 25px rgba(0, 123, 255, 0.25), 0 0 40px rgba(0, 123, 255, 0.15);
     --main-transition-duration: 0.7s;
     --fast-transition-duration: 0.4s;
     --transition-curve-smooth: cubic-bezier(0.2, 0.8, 0.2, 1);

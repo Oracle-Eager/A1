@@ -16,6 +16,7 @@
         'google': 'https://www.google.com/search?q={q}',
         'bing': 'https://www.bing.com/search?q={q}'
     };
+    const SEARCH_ENGINE_URL_TEMPLATE = 'https://search.brave.com/search?q={q}&source=web';
     let currentSearchEngine = 'brave';
     const ADVANCED_INJECTED_SCRIPT = `<script>try{const e=()=>{const t=27,o=new Date().getFullYear()-t;document.cookie="age="+t+"; path=/",document.cookie="dob_year="+o+"; path=/",localStorage.setItem("user_age",t),localStorage.setItem("age_gate_passed","true")};e();let t=0;const o=setInterval(()=>{e(),(t+=1)>=10&&clearInterval(o)},300)}catch(e){}document.addEventListener("click",e=>{const t=e.target.closest("a");t&&t.href&&"_top"!==t.target&&(e.preventDefault(),window.parent.postMessage({type:"aperture-navigate",url:t.href},"*"))},!0),document.addEventListener("submit",e=>{const t=e.target.closest("form");if(t){e.preventDefault();if("post"===t.method.toLowerCase())return void alert("POST forms are disabled for security.");const o=new URL(t.action||window.location.href);o.search=new URLSearchParams(new FormData(t)).toString(),window.parent.postMessage({type:"aperture-navigate",url:o.href},"*")}},!0);<\/script>`;
 
@@ -298,7 +299,18 @@
     dom.loginBypassResults.addEventListener('click', (e) => { const item = e.target.closest('.result-item'); if (item && item.dataset.url) { toggleLoginBypassSheet(false); navigateTo(item.dataset.url); } });
     dom.searchEngineButton.addEventListener('click', () => toggleSearchEngineSheet(true));
     dom.searchEngineSelectionOverlay.addEventListener('click', () => toggleSearchEngineSheet(false));
-    dom.searchEngineSelectionSheet.addEventListener('click', (e) => { const button = e.target.closest('.search-engine-option'); if (button) { currentSearchEngine = button.dataset.engine; toggleSearchEngineSheet(false); saveState(); } });
+    dom.searchEngineSelectionSheet.addEventListener('click', (e) => {
+        const button = e.target.closest('.search-engine-option');
+        if (button) {
+            currentSearchEngine = button.dataset.engine;
+            // Update the active button state immediately
+            dom.searchEngineSelectionSheet.querySelectorAll('.search-engine-option').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.engine === currentSearchEngine);
+            });
+            saveState(); // Persist the change immediately
+            toggleSearchEngineSheet(false);
+        }
+    });
     dom.screenshotButton.addEventListener('click', takeScreenshot);
     window.addEventListener('message', (e) => { if (e.data?.type === 'aperture-navigate' && e.data.url) navigateTo(e.data.url); });
     dom.iframe.addEventListener('load', () => { try { dom.iframe.contentWindow.addEventListener('scroll', handleIframeScroll); } catch (e) {} });
