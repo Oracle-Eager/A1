@@ -5,11 +5,11 @@
     --border-color: #e9ecef; /* Lighter Gray */
     --text-color: #212529; /* Darker Gray */
     --text-secondary-color: #6c757d; /* Gray */
-    --accent-color: #007bff; /* Blue */
-    --accent-hover-color: #0056b3; /* Darker Blue */
+    --accent-color: #93C572; /* Pista Green */
+    --accent-hover-color: #7ab35a; /* Darker Pista Green */
     --error-color: #e74c3c; /* Red */
     --shadow-color-dark: rgba(0, 0, 0, 0.05);
-    --glow-shadow: 0 0 25px rgba(0, 123, 255, 0.25), 0 0 40px rgba(0, 123, 255, 0.15);
+    --glow-shadow: 0 0 25px rgba(147, 197, 114, 0.25), 0 0 40px rgba(147, 197, 114, 0.15);
     --main-transition-duration: 0.7s;
     --fast-transition-duration: 0.4s;
     --transition-curve-smooth: cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -26,7 +26,7 @@ body, html {
 
 #progress-bar {
     position: fixed; top: 0; left: 0; height: 3px;
-    background: linear-gradient(90deg, var(--accent-color), #4a00e0);
+    background: linear-gradient(90deg, var(--accent-color), var(--accent-hover-color));
     width: 0; z-index: 1000; transition: width 0.3s, opacity 0.3s;
     box-shadow: var(--glow-shadow);
 }
@@ -50,6 +50,16 @@ body, html {
 .app-logo .logo-text span { color: var(--accent-color); animation: blink 1.4s step-end infinite; }
 @keyframes blink { 50% { opacity: 0; } }
 
+@media (max-width: 768px) {
+    .search-header {
+        padding: 10px;
+    }
+    .app-logo {
+        font-size: 3em;
+        margin-bottom: 30px;
+    }
+}
+
 #search-form {
     position: relative; display: flex; width: 100%; max-width: 720px;
     opacity: 0; transform: translateY(20px); animation: fadeInUp 0.8s 0.7s var(--transition-curve-smooth) forwards;
@@ -70,11 +80,26 @@ body, html {
     background-color: transparent; color: var(--text-color);
 }
 
+@media (max-width: 768px) {
+    #search-input {
+        height: 58px;
+        padding: 0 65px 0 28px;
+        font-size: 16px;
+    }
+}
+
 #search-button {
     position: absolute; top: 0; right: 0; height: 68px; width: 75px; border: none; background-color: transparent;
     color: var(--accent-color); cursor: pointer; user-select: none;
     border-radius: 0 40px 40px 0; display: flex; align-items: center; justify-content: center;
     transition: all 0.3s var(--transition-curve-smooth);
+}
+
+@media (max-width: 768px) {
+    #search-button {
+        height: 58px;
+        width: 65px;
+    }
 }
 #search-button:hover:not(.loading) { background-color: var(--accent-hover-color); color: #fff; }
 #search-button.loading { pointer-events: none; }
