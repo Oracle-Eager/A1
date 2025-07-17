@@ -50,6 +50,15 @@ body, html {
 .app-logo .logo-text span { color: var(--accent-color); animation: blink 1.4s step-end infinite; }
 @keyframes blink { 50% { opacity: 0; } }
 
+.version-label {
+    font-size: 0.25em;
+    font-weight: 500;
+    color: var(--text-secondary-color);
+    margin-left: 8px;
+    position: relative;
+    top: -0.4em;
+}
+
 @media (max-width: 768px) {
     .search-header {
         padding: 10px;
