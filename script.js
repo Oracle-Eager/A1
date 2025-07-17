@@ -33,7 +33,12 @@
         startProgress();
         try {
             const userAgent = mode === 'desktop' ? DESKTOP_USER_AGENT : MOBILE_USER_AGENT;
-            const pageHTML = prefetchCache[cleanUrl] ? await prefetchCache[cleanUrl] : await fetchWithProxy(cleanUrl, { 'User-Agent': userAgent });
+            const pagePromise = prefetchCache[cleanUrl] || fetchWithProxy(cleanUrl, { 'User-Agent': userAgent });
+            if (!prefetchCache[cleanUrl]) {
+                prefetchCache[cleanUrl] = pagePromise;
+            }
+
+            const pageHTML = await pagePromise;
             delete prefetchCache[cleanUrl];
 
             const doc = new DOMParser().parseFromString(pageHTML, 'text/html');
@@ -60,15 +65,15 @@
     const performScopedSearch = async (query, targetElement) => {
         targetElement.innerHTML = 'Searching for public pages...';
         try {
-            const searchUrl = SEARCH_ENGINE_URL_TEMPLATE.replace('{q}', encodeURIComponent(query));
+            const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
             const html = await fetchWithProxy(searchUrl);
             const doc = new DOMParser().parseFromString(html, 'text/html');
-            const parsedResults = Array.from(doc.querySelectorAll('div.snippet[data-pos]')).map(result => {
-                const titleEl = result.querySelector('a.snippet-title');
-                const urlEl = result.querySelector('div.url');
-                const descEl = result.querySelector('div.snippet-content');
-                if (!titleEl || !urlEl || !descEl || !titleEl.href) return null;
-                return { title: titleEl.textContent.trim(), url: titleEl.href, displayUrl: urlEl.textContent.trim(), description: descEl.textContent.trim() };
+            const parsedResults = Array.from(doc.querySelectorAll('div.g')).map(result => {
+                const titleEl = result.querySelector('h3');
+                const linkEl = result.querySelector('a');
+                const descEl = result.querySelector('div[data-content-feature="1"]');
+                if (!titleEl || !linkEl || !descEl || !linkEl.href) return null;
+                return { title: titleEl.textContent.trim(), url: linkEl.href, displayUrl: linkEl.href, description: descEl.textContent.trim() };
             }).filter(Boolean);
 
             if (parsedResults.length === 0) {
@@ -136,8 +141,18 @@
             }
         } else {
             dom.readerView.style.display = 'none'; dom.iframe.style.display = 'block';
-            dom.iframe.sandbox = mode === 'readonly' ? "allow-forms allow-modals allow-pointer-lock allow-popups allow-popups-to-escape-sandbox allow-same-origin" : "allow-forms allow-modals allow-pointer-lock allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts allow-top-navigation-by-user-activation";
-            if (mode === 'readonly') doc.querySelectorAll('script, noscript, iframe, link[rel="preload"], link[rel="prefetch"]').forEach(el => el.remove());
+            dom.iframe.sandbox = "allow-forms allow-modals allow-pointer-lock allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts allow-top-navigation-by-user-activation allow-downloads";
+            if (mode === 'readonly') {
+                doc.querySelectorAll('script, noscript, iframe, link[rel="preload"], link[rel="prefetch"]').forEach(el => el.remove());
+            } else if (mode === 'desktop') {
+                let viewport = doc.querySelector('meta[name="viewport"]');
+                if (!viewport) {
+                    viewport = doc.createElement('meta');
+                    viewport.name = 'viewport';
+                    doc.head.appendChild(viewport);
+                }
+                viewport.content = 'width=1024';
+            }
             doc.head.appendChild(doc.createRange().createContextualFragment(ADVANCED_INJECTED_SCRIPT));
             dom.iframe.srcdoc = doc.documentElement.outerHTML;
         }
