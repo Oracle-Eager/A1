@@ -99,7 +99,12 @@
     const renderError = (title, message, url) => {
         dom.iframe.style.display = 'none'; dom.readerView.style.display = 'none'; dom.iframe.srcdoc = 'about:blank';
         dom.pageViewerError.style.display = 'flex';
-        dom.pageViewerError.innerHTML = `<div class="error-content"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--error-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg><h2>${title}</h2><p>${message}</p><div class="error-actions"><button data-action="reload">Reload</button><button data-action="change-mode">Change Mode</button><button data-action="open-external">Open Externally</button></div></div>`;
+        let errorMessage = `<div class="error-content"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--error-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg><h2>${title}</h2><p>${message}</p>`;
+        if (message === 'CAPTCHA') {
+            errorMessage = `<div class="error-content"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--error-color)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg><h2>CAPTCHA Detected</h2><p>This page is protected by a CAPTCHA which cannot be bypassed at the moment. You can try to open the page in a new tab to solve the CAPTCHA yourself.</p>`;
+        }
+        errorMessage += `<div class="error-actions"><button data-action="reload">Reload</button><button data-action="change-mode">Change Mode</button><button data-action="open-external">Open Externally</button></div></div>`;
+        dom.pageViewerError.innerHTML = errorMessage;
         dom.pageViewerError.querySelector('[data-action="reload"]').onclick = () => navigateTo(currentViewState.url, false);
         dom.pageViewerError.querySelector('[data-action="change-mode"]').onclick = () => toggleModeSheet(true);
         dom.pageViewerError.querySelector('[data-action="open-external"]').onclick = () => window.open(url, '_blank', 'noopener,noreferrer');
