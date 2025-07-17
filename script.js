@@ -1,5 +1,7 @@
 (function() {
     // --- CONSTANTS & CONFIG ---
+    const MOBILE_USER_AGENT = 'Mozilla/5.0 (iPhone; CPU iPhone OS 13_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.1.1 Mobile/15E148 Safari/604.1';
+    const DESKTOP_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36';
     const SUGGESTION_API_URL = 'https://ac.duckduckgo.com/ac/?type=json&q=';
     const SEARCH_ENGINES = {
         'brave': 'https://search.brave.com/search?q={q}&source=web',
