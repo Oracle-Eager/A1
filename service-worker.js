@@ -6,7 +6,9 @@ const STATIC_ASSETS = [
   './icon-192.png',
   './icon-512.png',
   './style.css',
-  './script.js'
+  './script.js',
+  './privacy.js',
+  './bypass.js'
 ];
 
 self.addEventListener('install', event => {
@@ -33,19 +35,15 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   event.respondWith(
-    caches.match(event.request).then(response => {
-      if (response) {
-        return response;
-      }
-      return fetch(event.request).then(response => {
-        if (!response || response.status !== 200 || response.type !== 'basic') {
-          return response;
-        }
-        const responseToCache = response.clone();
-        caches.open(CACHE_NAME).then(cache => {
-          cache.put(event.request, responseToCache);
+    caches.open(CACHE_NAME).then(cache => {
+      return cache.match(event.request).then(response => {
+        const fetchPromise = fetch(event.request).then(networkResponse => {
+          if (networkResponse) {
+            cache.put(event.request, networkResponse.clone());
+          }
+          return networkResponse;
         });
-        return response;
+        return response || fetchPromise;
       });
     })
   );
