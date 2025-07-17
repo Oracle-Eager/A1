@@ -136,7 +136,7 @@ const PROXIES = [
     { prefix: 'https://api.youtube.com/raw?url='},
     { prefix: 'https://api.vimeo.com/raw?url='},
     { prefix: 'https://api.dailymotion.com/raw?url='},
-    { prefix: 'https://api.soundcloud.com/raw?url='},
+    { prefix'https://api.soundcloud.com/raw?url='},
     { prefix: 'https://api.spotify.com/raw?url='},
     { prefix: 'https://api.github.com/raw?url='},
     { prefix: 'https://api.gitlab.com/raw?url='},
@@ -150,20 +150,60 @@ const PROXIES = [
     { prefix: 'https://api.tumblr.com/raw?url='}
 ];
 const FETCH_TIMEOUT = 10000;
-const MOBILE_USER_AGENT = 'Mozilla/5.0 (Android 10; Mobile; rv:109.0) Gecko/109.0 Firefox/115.0';
-const DESKTOP_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/115.0';
+const USER_AGENTS = [
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.1 Safari/605.1.15',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 13_1) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.1 Safari/605.1.15',
+];
+
+const getRandomUserAgent = () => USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+
+let activeProxies = [...PROXIES];
+
+async function checkProxies() {
+    const testUrl = 'https://www.google.com';
+    const checkedProxies = [];
+    for (const proxy of PROXIES) {
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
+            const response = await fetch(`${proxy.prefix}${encodeURIComponent(testUrl)}`, {
+                signal: controller.signal,
+                headers: { 'User-Agent': getRandomUserAgent() }
+            });
+            clearTimeout(timeoutId);
+            if (response.ok) {
+                const text = await response.text();
+                if (!/Cloudflare|hCaptcha|Verifying you are human|Checking your browser/i.test(text)) {
+                    checkedProxies.push(proxy);
+                }
+            }
+        } catch (error) {
+            // Ignore failed proxies
+        }
+    }
+    if (checkedProxies.length > 0) {
+        activeProxies = checkedProxies;
+    }
+}
 
 async function fetchWithProxy(targetUrl, headers = {}) {
-    const shuffledProxies = [...PROXIES].sort(() => Math.random() - 0.5);
+    const shuffledProxies = [...activeProxies].sort(() => Math.random() - 0.5);
+    let lastError = null;
 
     for (const proxy of shuffledProxies) {
         try {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
 
+            const userAgent = headers['User-Agent'] || getRandomUserAgent();
             const response = await fetch(`${proxy.prefix}${encodeURIComponent(targetUrl)}`, {
                 headers: {
-                    'User-Agent': headers['User-Agent'] || MOBILE_USER_AGENT,
+                    'User-Agent': userAgent,
                     'X-Requested-With': 'XMLHttpRequest',
                     'Referer': targetUrl
                 },
@@ -174,16 +214,25 @@ async function fetchWithProxy(targetUrl, headers = {}) {
 
             if (response.ok) {
                 const text = await response.text();
-                if (!/Cloudflare|hCaptcha|Verifying you are human|Checking your browser/i.test(text)) {
+                if (/Cloudflare|hCaptcha|Verifying you are human|Checking your browser/i.test(text)) {
+                    lastError = new Error('CAPTCHA');
+                } else {
                     return text;
                 }
+            } else {
+                lastError = new Error(`Proxy returned status ${response.status}`);
             }
         } catch (error) {
+            lastError = error;
             console.error(`Proxy ${proxy.prefix} failed:`, error.name);
         }
     }
-    throw new Error('All proxies failed or were blocked.');
+    throw lastError || new Error('All proxies failed or were blocked.');
 }
+
+// Check proxies on startup and then every 5 minutes
+checkProxies();
+setInterval(checkProxies, 5 * 60 * 1000);
 
 async function detectAndBypassLogin(doc, url) {
     const hasPasswordField = doc.querySelector('input[type="password"]');
@@ -191,6 +240,18 @@ async function detectAndBypassLogin(doc, url) {
     const hasLoginKeywords = /log in|sign in|username|e-mail address/.test(bodyText);
 
     if (hasPasswordField && hasLoginKeywords) {
+        try {
+            const article = await Mercury.parse(url, { html: doc.documentElement.outerHTML });
+            if (article && article.content) {
+                dom.readerView.querySelector('#reader-view-content').innerHTML = `<h1>${article.title}</h1><div class="byline">${article.author || ''}</div>${article.content}`;
+                dom.readerView.style.display = 'block';
+                dom.iframe.style.display = 'none';
+                return true;
+            }
+        } catch (e) {
+            console.error("Failed to parse article with Mercury:", e);
+        }
+
         const title = doc.title.replace(/log in|sign in|login|signin/i, '').replace(/[-|–_]/g, ' ').trim();
         const hostname = new URL(url).hostname;
         const searchQuery = `site:${hostname} ${title}`;
